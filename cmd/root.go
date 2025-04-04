@@ -8,12 +8,18 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	// Version is the current version of dotme
+	Version = "v0.1.0"
+)
+
 var rootCmd = &cobra.Command{
-	Use:   "dotme [git-repository-url]",
-	Short: "Apply dotfiles from a Git repository",
+	Use:     "dotme [git-repository-url]",
+	Short:   "Apply dotfiles from a Git repository",
 	Long: `dotme is a command line tool that applies dotfiles from a Git repository to your current working directory.
 It only copies files and folders starting with a dot (.) from the root of the repository.`,
-	Args: cobra.ExactArgs(1),
+	Version: Version,
+	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		repoURL := args[0]
 		err := internal.ProcessRepository(repoURL)
