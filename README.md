@@ -21,6 +21,38 @@ A command-line tool to apply dotfiles from a Git repository to your current work
 
 Download the latest binary for your platform from the [Releases](https://github.com/rsvinicius/dotme/releases) page.
 
+#### Linux
+
+```bash
+# Download the binary (choose amd64 or arm64 according to your architecture)
+curl -L https://github.com/rsvinicius/dotme/releases/download/v0.1.0/dotme-linux-amd64 -o dotme
+
+# Make it executable
+chmod +x dotme
+
+# Move to a directory in your PATH (optional)
+sudo mv dotme /usr/local/bin/
+```
+
+#### macOS
+
+```bash
+# Download the binary (choose amd64 or arm64 according to your architecture)
+curl -L https://github.com/rsvinicius/dotme/releases/download/v0.1.0/dotme-macos-amd64 -o dotme
+
+# Make it executable
+chmod +x dotme
+
+# Move to a directory in your PATH (optional)
+sudo mv dotme /usr/local/bin/
+```
+
+#### Windows
+
+1. Download the [Windows binary](https://github.com/rsvinicius/dotme/releases/download/v0.1.0/dotme-windows-amd64.exe)
+2. Rename it to `dotme.exe` (optional)
+3. Add it to your PATH or place it in a directory that's already in your PATH
+
 ### From Source
 
 ```bash
