@@ -1,4 +1,4 @@
-package internal
+package fs_test
 
 import (
 	"io/fs"
@@ -6,8 +6,9 @@ import (
 	"path/filepath"
 	"reflect"
 	"sort"
-	"strings"
 	"testing"
+
+	fspackage "github.com/rsvinicius/dotme/internal/fs"
 )
 
 // TestIsDotfile tests the logic for identifying dotfiles
@@ -26,8 +27,8 @@ func TestIsDotfile(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := strings.HasPrefix(tt.filename, "."); got != tt.want {
-				t.Errorf("isDotfile(%q) = %v, want %v", tt.filename, got, tt.want)
+			if got := fspackage.IsDotfile(tt.filename); got != tt.want {
+				t.Errorf("IsDotfile(%q) = %v, want %v", tt.filename, got, tt.want)
 			}
 		})
 	}
@@ -58,8 +59,8 @@ func TestCopyFile(t *testing.T) {
 
 	// Copy the file
 	dstPath := filepath.Join(dstDir, testFilename)
-	if err := copyFile(srcPath, dstPath); err != nil {
-		t.Fatalf("copyFile failed: %v", err)
+	if err := fspackage.CopyFile(srcPath, dstPath); err != nil {
+		t.Fatalf("CopyFile failed: %v", err)
 	}
 
 	// Verify the file was copied correctly
@@ -69,7 +70,7 @@ func TestCopyFile(t *testing.T) {
 	}
 
 	if string(dstContent) != testContent {
-		t.Errorf("copyFile did not copy content correctly, got %q, want %q", string(dstContent), testContent)
+		t.Errorf("CopyFile did not copy content correctly, got %q, want %q", string(dstContent), testContent)
 	}
 
 	// Check file permissions
@@ -84,7 +85,7 @@ func TestCopyFile(t *testing.T) {
 	}
 
 	if srcInfo.Mode() != dstInfo.Mode() {
-		t.Errorf("copyFile did not preserve file mode, got %v, want %v", dstInfo.Mode(), srcInfo.Mode())
+		t.Errorf("CopyFile did not preserve file mode, got %v, want %v", dstInfo.Mode(), srcInfo.Mode())
 	}
 }
 
@@ -139,8 +140,8 @@ func TestCopyDir(t *testing.T) {
 
 	// Copy the directory
 	dstDirPath := filepath.Join(dstDir, ".testdir")
-	if err := copyDir(testDirPath, dstDirPath); err != nil {
-		t.Fatalf("copyDir failed: %v", err)
+	if err := fspackage.CopyDir(testDirPath, dstDirPath); err != nil {
+		t.Fatalf("CopyDir failed: %v", err)
 	}
 
 	// Verify the directory was copied correctly
@@ -186,7 +187,7 @@ func TestCopyDir(t *testing.T) {
 	sort.Strings(dstFiles)
 
 	if !reflect.DeepEqual(srcFiles, dstFiles) {
-		t.Errorf("copyDir did not copy files correctly, got %v, want %v", dstFiles, srcFiles)
+		t.Errorf("CopyDir did not copy files correctly, got %v, want %v", dstFiles, srcFiles)
 	}
 
 	// Verify content of copied files
@@ -203,7 +204,7 @@ func TestCopyDir(t *testing.T) {
 		}
 
 		if string(dstContent) != tf.content {
-			t.Errorf("copyDir did not copy content correctly for %s, got %q, want %q", srcRelPath, string(dstContent), tf.content)
+			t.Errorf("CopyDir did not copy content correctly for %s, got %q, want %q", srcRelPath, string(dstContent), tf.content)
 		}
 	}
 
@@ -215,7 +216,7 @@ func TestCopyDir(t *testing.T) {
 	}
 
 	if string(dstSubContent) != "subcontent" {
-		t.Errorf("copyDir did not copy subdirectory content correctly, got %q, want %q", string(dstSubContent), "subcontent")
+		t.Errorf("CopyDir did not copy subdirectory content correctly, got %q, want %q", string(dstSubContent), "subcontent")
 	}
 }
 
@@ -272,8 +273,8 @@ func TestCopyDotFiles(t *testing.T) {
 	os.Stdout, _ = os.Open(os.DevNull)
 	defer func() { os.Stdout = originalStdout }()
 
-	if err := copyDotFiles(srcDir, dstDir); err != nil {
-		t.Fatalf("copyDotFiles failed: %v", err)
+	if err := fspackage.CopyDotFiles(srcDir, dstDir); err != nil {
+		t.Fatalf("CopyDotFiles failed: %v", err)
 	}
 
 	// Verify only dotfiles were copied
@@ -292,12 +293,12 @@ func TestCopyDotFiles(t *testing.T) {
 	sort.Strings(expectedNames)
 
 	if !reflect.DeepEqual(copiedNames, expectedNames) {
-		t.Errorf("copyDotFiles did not filter correctly, got %v, want %v", copiedNames, expectedNames)
+		t.Errorf("CopyDotFiles did not filter correctly, got %v, want %v", copiedNames, expectedNames)
 	}
 
 	// Check content of the copied files
 	for _, f := range files {
-		if !strings.HasPrefix(f.name, ".") || f.isDir {
+		if !fspackage.IsDotfile(f.name) || f.isDir {
 			continue
 		}
 
@@ -308,7 +309,7 @@ func TestCopyDotFiles(t *testing.T) {
 		}
 
 		if string(content) != f.content {
-			t.Errorf("copyDotFiles did not copy content correctly for %s, got %q, want %q", f.name, string(content), f.content)
+			t.Errorf("CopyDotFiles did not copy content correctly for %s, got %q, want %q", f.name, string(content), f.content)
 		}
 	}
 
@@ -320,6 +321,6 @@ func TestCopyDotFiles(t *testing.T) {
 	}
 
 	if string(content) != "vscode settings" {
-		t.Errorf("copyDotFiles did not copy .vscode contents correctly, got %q, want %q", string(content), "vscode settings")
+		t.Errorf("CopyDotFiles did not copy .vscode contents correctly, got %q, want %q", string(content), "vscode settings")
 	}
 }
