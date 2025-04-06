@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Tests for directory copying functionality
   - Mock tests for repository processing
 
+### Changed
+- Improved project structure and organization:
+  - Separated implementation code by responsibility (fs, git)
+  - Moved all tests to dedicated test directory
+  - Clear separation between tests and implementation code
+  - Better code modularity with focused packages
+
 ## [v0.1.0] - 2025-04-04
 
 ### Added
