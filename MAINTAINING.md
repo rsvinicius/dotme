@@ -39,60 +39,71 @@ This project follows [Semantic Versioning](https://semver.org/):
 
 ## Creating a New Release
 
-### 1. Update Version
-
-Update version references in the code:
-
-- Main CLI version string in the `cmd/root.go` file
-
-### 2. Update the Changelog
+### 1. Update the Changelog
 
 Follow the instructions above to update the `CHANGELOG.md` file.
 
-### 3. Create a Git Tag
+### 2. Create a Git Tag and Push
 
 ```bash
 # Create an annotated tag
-git tag -a v1.0.0 -m "Release v1.0.0"
+git tag -a vX.Y.Z -m "Release vX.Y.Z"
 
 # Push the tag
-git push origin v1.0.0
+git push origin vX.Y.Z
 ```
 
-### 4. Build Release Binaries
+### 3. Automated Release Process
 
-Build binaries for all supported platforms:
+Once you push a tag that starts with 'v', the GitHub Actions release workflow will automatically:
 
-```bash
-# Create release directory
-mkdir -p release
+1. Build release binaries for all supported platforms
+2. Create a GitHub Release with the same name as the tag
+3. Upload the compiled binaries to the release
+4. Generate checksums for verification
 
-# Build for Linux
-GOOS=linux GOARCH=amd64 go build -o release/dotme-linux-amd64 .
-GOOS=linux GOARCH=arm64 go build -o release/dotme-linux-arm64 .
+You can monitor the release process in the Actions tab of the GitHub repository.
 
-# Build for macOS
-GOOS=darwin GOARCH=amd64 go build -o release/dotme-macos-amd64 .
-GOOS=darwin GOARCH=arm64 go build -o release/dotme-macos-arm64 .
+### 4. Verify the Release
 
-# Build for Windows
-GOOS=windows GOARCH=amd64 go build -o release/dotme-windows-amd64.exe .
-```
+After the workflow completes:
+1. Go to the repository's Releases page on GitHub
+2. Verify that the new release appears with the correct version
+3. Check that all binary assets are attached
+4. Review the generated changelog
 
-### 5. Create a GitHub Release
+## CI/CD Setup
 
-1. Go to the repository on GitHub
-2. Click on "Releases"
-3. Click "Draft a new release"
-4. Select the tag you just created
-5. Add a title and description (you can copy from the CHANGELOG)
-6. Attach the binary files from the `release` directory
-7. Click "Publish release"
+This project uses GitHub Actions for continuous integration and delivery:
+
+### CI Workflow (.github/workflows/ci.yml)
+
+The CI workflow runs on every push to main/master and pull requests. It includes:
+- Running tests (with and without race detector)
+- Linting the code with golangci-lint
+- Building the application
+- Cross-platform builds for multiple platforms
+
+### Release Workflow (.github/workflows/release.yml)
+
+The release workflow runs when a version tag (v*) is pushed. It uses GoReleaser to:
+- Build binaries for multiple platforms
+- Create release archives
+- Generate checksums
+- Publish the GitHub release
+
+### GoReleaser Configuration (.goreleaser.yaml)
+
+Contains the configuration for the automated release process, including:
+- Build settings for different platforms
+- Archive formats
+- Changelog generation
+- Release settings
 
 ## Handling Issues and Pull Requests
 
 - Respond to issues and pull requests promptly
 - Label issues appropriately
-- Review pull requests with care, ensuring they follow coding standards
+- Review pull requests with care, ensuring they follow coding standards and pass CI checks
 - Merge pull requests that meet the project's quality standards
 - Update the changelog when merging significant changes

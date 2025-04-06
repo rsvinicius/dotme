@@ -14,6 +14,8 @@ A command-line tool to apply dotfiles from a Git repository to your current work
 - Cross-platform (Linux, macOS, Windows)
 - Clear terminal output with information about what was copied and ignored
 - Automatically cleans up temporary files after execution
+- Comprehensive test suite with high code coverage
+- Continuous integration and automated releases
 
 ## 📋 Installation
 
@@ -74,6 +76,9 @@ go install
 ```bash
 # Apply dotfiles from a Git repository
 dotme https://github.com/your-username/dotfiles
+
+# Display version information
+dotme version
 ```
 
 ### Example
@@ -98,6 +103,35 @@ This will:
    - For folders, it recursively copies all contents (regardless of whether the inner files start with a dot)
 4. Displays a summary of what was copied and what was ignored
 5. Cleans up the temporary directory
+
+## 🧪 Development and Testing
+
+The project follows a structured organization with clear separation of concerns:
+
+```
+dotme/
+├── cmd/                    # Command-line interface
+├── internal/               # Implementation code
+│   ├── fs/                 # File system operations
+│   ├── git/                # Git repository operations
+│   └── dotfiles.go         # Integration layer
+└── test/                   # Test code
+    ├── fs/                 # File system tests
+    └── mocks/              # Mock implementations
+```
+
+All tests can be run using:
+```bash
+go test ./...
+```
+
+## 🔄 CI/CD
+
+This project uses GitHub Actions for continuous integration and deployment:
+
+- **CI pipeline** runs on every push and pull request, performing tests, linting, and builds
+- **Release workflow** automatically creates releases when version tags are pushed
+- **Cross-platform builds** ensure compatibility across Linux, macOS, and Windows
 
 ## 🤝 Contributing
 

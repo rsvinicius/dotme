@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Tests for file copying functionality
   - Tests for directory copying functionality
   - Mock tests for repository processing
+- GitHub Actions workflows for CI/CD:
+  - Continuous integration with testing, linting, and building
+  - Cross-platform binary building
+  - Automated release process with GoReleaser
+- Version command to display build information
 
 ### Changed
 - Improved project structure and organization:
