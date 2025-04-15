@@ -27,39 +27,40 @@ A command-line tool to apply dotfiles from a Git repository to your current work
 
 ### From Binary Releases
 
-Download the latest binary for your platform from the [Releases](https://github.com/rsvinicius/dotme/releases) page.
+Download the latest release archive for your platform from the [Releases](https://github.com/rsvinicius/dotme/releases) page and extract it.
 
 #### Linux
 
 ```bash
-# Download the binary (choose amd64 or arm64 according to your architecture)
-curl -L https://github.com/rsvinicius/dotme/releases/download/v0.1.0/dotme-linux-amd64 -o dotme
+# Download the tar.gz file (choose amd64 or arm64 according to your architecture)
+curl -L https://github.com/rsvinicius/dotme/releases/download/v0.2.0/dotme_0.2.0_linux_amd64.tar.gz -o dotme.tar.gz
 
-# Make it executable
-chmod +x dotme
+# Extract the archive
+tar -xzf dotme.tar.gz
 
-# Move to a directory in your PATH (optional)
+# Move the binary to a directory in your PATH (optional)
 sudo mv dotme /usr/local/bin/
 ```
 
 #### macOS
 
 ```bash
-# Download the binary (choose amd64 or arm64 according to your architecture)
-curl -L https://github.com/rsvinicius/dotme/releases/download/v0.1.0/dotme-macos-amd64 -o dotme
+# Download the tar.gz file (choose amd64 or arm64 according to your architecture)
+curl -L https://github.com/rsvinicius/dotme/releases/download/v0.2.0/dotme_0.2.0_darwin_amd64.tar.gz -o dotme.tar.gz
 
-# Make it executable
-chmod +x dotme
+# Extract the archive
+tar -xzf dotme.tar.gz
 
-# Move to a directory in your PATH (optional)
+# Move the binary to a directory in your PATH (optional)
 sudo mv dotme /usr/local/bin/
 ```
 
 #### Windows
 
-1. Download the [Windows binary](https://github.com/rsvinicius/dotme/releases/download/v0.1.0/dotme-windows-amd64.exe)
-2. Rename it to `dotme.exe` (optional)
-3. Add it to your PATH or place it in a directory that's already in your PATH
+1. Download the [Windows zip file](https://github.com/rsvinicius/dotme/releases/download/v0.2.0/dotme_0.2.0_windows_amd64.zip).
+2. Extract the zip file.
+3. Rename the extracted file to `dotme.exe` (optional).
+4. Add it to your PATH or place it in a directory that's already in your PATH.
 
 ### From Source
 
