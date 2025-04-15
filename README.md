@@ -17,6 +17,7 @@ A command-line tool to apply dotfiles from a Git repository to your current work
 - Only copies files and folders that start with a dot (`.`) at the repository root
 - Recursively copies contents of dotfiles folders
 - Cross-platform (Linux, macOS, Windows)
+- Save repositories with aliases for quick access
 - Clear terminal output with information about what was copied and ignored
 - Automatically cleans up temporary files after execution
 - Comprehensive test suite with high code coverage
@@ -82,6 +83,18 @@ go install
 # Apply dotfiles from a Git repository
 dotme https://github.com/your-username/dotfiles
 
+# Save a repository with an alias
+dotme -s my-dotfiles https://github.com/your-username/dotfiles
+
+# Apply dotfiles using a saved alias
+dotme -a my-dotfiles
+
+# List all saved repository aliases
+dotme list-aliases
+
+# Remove a saved repository alias
+dotme remove-alias my-dotfiles
+
 # Display version information
 dotme version
 ```
@@ -98,6 +111,26 @@ This will:
 2. Copy only files and folders that start with a dot (`.`) from the root of the repository to your current directory
 3. Show what was copied and what was ignored
 4. Clean up the temporary directory
+
+### Repository Aliases
+
+You can save frequently used repositories with aliases for easier access:
+
+```bash
+# Save a repository with an alias
+dotme -s work-dotfiles https://github.com/your-company/dotfiles
+
+# Apply dotfiles using the saved alias
+dotme -a work-dotfiles
+
+# List all saved aliases
+dotme list-aliases
+
+# Remove an alias you no longer need
+dotme remove-alias work-dotfiles
+```
+
+Aliases are stored in `~/.dotme/config.json` and can be used across sessions.
 
 ## ⚙️ How It Works
 
@@ -117,10 +150,12 @@ The project follows a structured organization with clear separation of concerns:
 dotme/
 ├── cmd/                    # Command-line interface
 ├── internal/               # Implementation code
+│   ├── alias/              # Repository alias management
 │   ├── fs/                 # File system operations
 │   ├── git/                # Git repository operations
 │   └── dotfiles.go         # Integration layer
 └── test/                   # Test code
+    ├── alias/              # Alias tests
     ├── fs/                 # File system tests
     └── mocks/              # Mock implementations
 ```
