@@ -3,6 +3,7 @@ package alias_test
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/rsvinicius/dotme/internal/alias"
@@ -182,7 +183,12 @@ func TestConfigPath(t *testing.T) {
 	}
 
 	// Check that the directory is in the temp (home) directory
-	if !filepath.HasPrefix(configDir, tempDir) {
-		t.Errorf("GetConfigPath() directory = %v, want prefix %v", configDir, tempDir)
+	// Replacing deprecated filepath.HasPrefix with filepath.Rel
+	rel, err := filepath.Rel(tempDir, configDir)
+	if err != nil {
+		t.Errorf("Failed to get relative path: %v", err)
+	}
+	if rel == ".." || strings.HasPrefix(rel, "../") {
+		t.Errorf("GetConfigPath() directory = %v is not under temp dir %v", configDir, tempDir)
 	}
 }

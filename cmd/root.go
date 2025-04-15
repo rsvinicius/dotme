@@ -62,7 +62,9 @@ It only copies files and folders starting with a dot (.) from the root of the re
 		// Normal operation - apply dotfiles from repository
 		if len(args) != 1 {
 			fmt.Fprintf(os.Stderr, "Error: repository URL is required\n")
-			cmd.Help()
+			if err := cmd.Help(); err != nil {
+				fmt.Fprintf(os.Stderr, "Error displaying help: %s\n", err)
+			}
 			os.Exit(1)
 		}
 
