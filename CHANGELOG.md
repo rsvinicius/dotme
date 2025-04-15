@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Repository alias functionality:
+  - Save repositories with custom aliases for quick access (`-s, --save` flag)
+  - Use saved repositories by their aliases (`-a, --alias` flag)
+  - List all saved aliases (`list-aliases` command)
+  - Remove saved aliases (`remove-alias` command)
+  - Persistent storage of aliases in user's home directory
+- Unit tests for alias functionality
 - Unit tests for core functionality:
   - Tests for dotfile filtering logic
   - Tests for file copying functionality
@@ -20,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Improved project structure and organization:
-  - Separated implementation code by responsibility (fs, git)
+  - Separated implementation code by responsibility (fs, git, alias)
   - Moved all tests to dedicated test directory
   - Clear separation between tests and implementation code
   - Better code modularity with focused packages
