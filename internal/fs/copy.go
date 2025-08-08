@@ -5,16 +5,12 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
+
+	"github.com/rsvinicius/dotme/internal/patterns"
 )
 
-// IsDotfile checks if a file or directory name starts with a dot
-func IsDotfile(name string) bool {
-	return strings.HasPrefix(name, ".")
-}
-
-// CopyDotFiles copies all dotfiles from source to destination directory
-func CopyDotFiles(srcDir, destDir string) error {
+// CopyDotFiles copies dotfiles from source to destination directory based on filter options
+func CopyDotFiles(srcDir, destDir string, filterOptions *patterns.FilterOptions) error {
 	var copied, ignored int
 	var copiedItems []string
 	var ignoredItems []string
@@ -34,8 +30,8 @@ func CopyDotFiles(srcDir, destDir string) error {
 			continue
 		}
 
-		// Only process files/directories that start with a dot
-		if !IsDotfile(name) {
+		// Check if the file should be included based on filter options
+		if !filterOptions.ShouldInclude(name) {
 			ignored++
 			ignoredItems = append(ignoredItems, name)
 			continue
@@ -71,6 +67,17 @@ func CopyDotFiles(srcDir, destDir string) error {
 	fmt.Printf("\n❌ Ignored %d items:\n", ignored)
 	for _, item := range ignoredItems {
 		fmt.Printf("   - %s\n", item)
+	}
+
+	// Display active filters if any
+	if len(filterOptions.IncludePatterns) > 0 || len(filterOptions.ExcludePatterns) > 0 {
+		fmt.Printf("\n🔍 Active filters:\n")
+		if len(filterOptions.IncludePatterns) > 0 {
+			fmt.Printf("   Include patterns: %v\n", filterOptions.IncludePatterns)
+		}
+		if len(filterOptions.ExcludePatterns) > 0 {
+			fmt.Printf("   Exclude patterns: %v\n", filterOptions.ExcludePatterns)
+		}
 	}
 
 	fmt.Printf("\n🎉 Done! Your dotfiles have been applied successfully.\n")

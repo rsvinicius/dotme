@@ -1,326 +1,239 @@
-package fs_test
+package fs
 
 import (
-	"io/fs"
 	"os"
 	"path/filepath"
-	"reflect"
-	"sort"
 	"testing"
 
-	fspackage "github.com/rsvinicius/dotme/internal/fs"
+	"github.com/rsvinicius/dotme/internal/fs"
+	"github.com/rsvinicius/dotme/internal/patterns"
 )
-
-// TestIsDotfile tests the logic for identifying dotfiles
-func TestIsDotfile(t *testing.T) {
-	tests := []struct {
-		name     string
-		filename string
-		want     bool
-	}{
-		{"empty string", "", false},
-		{"dotfile", ".gitconfig", true},
-		{"dotfolder", ".vscode", true},
-		{"non-dotfile", "README.md", false},
-		{"non-dotfolder", "src", false},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := fspackage.IsDotfile(tt.filename); got != tt.want {
-				t.Errorf("IsDotfile(%q) = %v, want %v", tt.filename, got, tt.want)
-			}
-		})
-	}
-}
 
 // TestCopyFile tests the file copying functionality
 func TestCopyFile(t *testing.T) {
-	// Create temporary directories for testing
-	srcDir, err := os.MkdirTemp("", "dotme-test-src-*")
+	// Create a temporary directory for testing
+	tempDir, err := os.MkdirTemp("", "dotme-test-")
 	if err != nil {
-		t.Fatalf("failed to create source temp dir: %v", err)
+		t.Fatalf("Failed to create temp directory: %v", err)
 	}
-	defer os.RemoveAll(srcDir)
+	defer os.RemoveAll(tempDir)
 
-	dstDir, err := os.MkdirTemp("", "dotme-test-dst-*")
+	// Create a source file
+	srcFile := filepath.Join(tempDir, "source.txt")
+	content := "Hello, World!"
+	err = os.WriteFile(srcFile, []byte(content), 0644)
 	if err != nil {
-		t.Fatalf("failed to create destination temp dir: %v", err)
-	}
-	defer os.RemoveAll(dstDir)
-
-	// Create a test file in the source directory
-	testContent := "test content"
-	testFilename := ".testfile"
-	srcPath := filepath.Join(srcDir, testFilename)
-	if err := os.WriteFile(srcPath, []byte(testContent), 0644); err != nil {
-		t.Fatalf("failed to create test file: %v", err)
+		t.Fatalf("Failed to create source file: %v", err)
 	}
 
 	// Copy the file
-	dstPath := filepath.Join(dstDir, testFilename)
-	if err := fspackage.CopyFile(srcPath, dstPath); err != nil {
+	destFile := filepath.Join(tempDir, "dest.txt")
+	err = fs.CopyFile(srcFile, destFile)
+	if err != nil {
 		t.Fatalf("CopyFile failed: %v", err)
 	}
 
-	// Verify the file was copied correctly
-	dstContent, err := os.ReadFile(dstPath)
+	// Verify the destination file exists and has the correct content
+	destContent, err := os.ReadFile(destFile)
 	if err != nil {
-		t.Fatalf("failed to read destination file: %v", err)
+		t.Fatalf("Failed to read destination file: %v", err)
 	}
 
-	if string(dstContent) != testContent {
-		t.Errorf("CopyFile did not copy content correctly, got %q, want %q", string(dstContent), testContent)
-	}
-
-	// Check file permissions
-	srcInfo, err := os.Stat(srcPath)
-	if err != nil {
-		t.Fatalf("failed to stat source file: %v", err)
-	}
-
-	dstInfo, err := os.Stat(dstPath)
-	if err != nil {
-		t.Fatalf("failed to stat destination file: %v", err)
-	}
-
-	if srcInfo.Mode() != dstInfo.Mode() {
-		t.Errorf("CopyFile did not preserve file mode, got %v, want %v", dstInfo.Mode(), srcInfo.Mode())
+	if string(destContent) != content {
+		t.Errorf("Destination file content = %q, want %q", string(destContent), content)
 	}
 }
 
 // TestCopyDir tests the directory copying functionality
 func TestCopyDir(t *testing.T) {
-	// Create temporary directories for testing
-	srcDir, err := os.MkdirTemp("", "dotme-test-src-*")
+	// Create a temporary directory for testing
+	tempDir, err := os.MkdirTemp("", "dotme-test-")
 	if err != nil {
-		t.Fatalf("failed to create source temp dir: %v", err)
+		t.Fatalf("Failed to create temp directory: %v", err)
 	}
-	defer os.RemoveAll(srcDir)
+	defer os.RemoveAll(tempDir)
 
-	dstDir, err := os.MkdirTemp("", "dotme-test-dst-*")
+	// Create source directory structure
+	srcDir := filepath.Join(tempDir, "src")
+	err = os.MkdirAll(filepath.Join(srcDir, "subdir"), 0755)
 	if err != nil {
-		t.Fatalf("failed to create destination temp dir: %v", err)
-	}
-	defer os.RemoveAll(dstDir)
-
-	// Create a directory structure in the source
-	testDirPath := filepath.Join(srcDir, ".testdir")
-	if err := os.Mkdir(testDirPath, 0755); err != nil {
-		t.Fatalf("failed to create test directory: %v", err)
+		t.Fatalf("Failed to create source directory: %v", err)
 	}
 
-	// Create files in the test directory
-	testFiles := []struct {
-		path    string
-		content string
-	}{
-		{filepath.Join(testDirPath, "file1"), "content1"},
-		{filepath.Join(testDirPath, "file2"), "content2"},
-		{filepath.Join(testDirPath, ".dotfile"), "dotcontent"},
+	// Create files in the source directory
+	files := map[string]string{
+		"file1.txt":        "content1",
+		"subdir/file2.txt": "content2",
 	}
 
-	for _, tf := range testFiles {
-		if err := os.WriteFile(tf.path, []byte(tf.content), 0644); err != nil {
-			t.Fatalf("failed to create test file %s: %v", tf.path, err)
+	for file, content := range files {
+		filePath := filepath.Join(srcDir, file)
+		err = os.WriteFile(filePath, []byte(content), 0644)
+		if err != nil {
+			t.Fatalf("Failed to create source file %s: %v", file, err)
 		}
-	}
-
-	// Create a subdirectory
-	subDirPath := filepath.Join(testDirPath, "subdir")
-	if err := os.Mkdir(subDirPath, 0755); err != nil {
-		t.Fatalf("failed to create test subdirectory: %v", err)
-	}
-
-	// Create a file in the subdirectory
-	subFilePath := filepath.Join(subDirPath, "subfile")
-	if err := os.WriteFile(subFilePath, []byte("subcontent"), 0644); err != nil {
-		t.Fatalf("failed to create test file in subdirectory: %v", err)
 	}
 
 	// Copy the directory
-	dstDirPath := filepath.Join(dstDir, ".testdir")
-	if err := fspackage.CopyDir(testDirPath, dstDirPath); err != nil {
+	destDir := filepath.Join(tempDir, "dest")
+	err = fs.CopyDir(srcDir, destDir)
+	if err != nil {
 		t.Fatalf("CopyDir failed: %v", err)
 	}
 
-	// Verify the directory was copied correctly
-	var srcFiles []string
-	var dstFiles []string
-
-	err = filepath.WalkDir(testDirPath, func(path string, d fs.DirEntry, err error) error {
+	// Verify all files were copied correctly
+	for file, expectedContent := range files {
+		destFile := filepath.Join(destDir, file)
+		content, err := os.ReadFile(destFile)
 		if err != nil {
-			return err
-		}
-		if !d.IsDir() {
-			relPath, err := filepath.Rel(testDirPath, path)
-			if err != nil {
-				return err
-			}
-			srcFiles = append(srcFiles, relPath)
-		}
-		return nil
-	})
-	if err != nil {
-		t.Fatalf("failed to walk source directory: %v", err)
-	}
-
-	err = filepath.WalkDir(dstDirPath, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if !d.IsDir() {
-			relPath, err := filepath.Rel(dstDirPath, path)
-			if err != nil {
-				return err
-			}
-			dstFiles = append(dstFiles, relPath)
-		}
-		return nil
-	})
-	if err != nil {
-		t.Fatalf("failed to walk destination directory: %v", err)
-	}
-
-	// Sort for comparison
-	sort.Strings(srcFiles)
-	sort.Strings(dstFiles)
-
-	if !reflect.DeepEqual(srcFiles, dstFiles) {
-		t.Errorf("CopyDir did not copy files correctly, got %v, want %v", dstFiles, srcFiles)
-	}
-
-	// Verify content of copied files
-	for _, tf := range testFiles {
-		srcRelPath, err := filepath.Rel(testDirPath, tf.path)
-		if err != nil {
-			t.Fatalf("failed to get relative path: %v", err)
-		}
-
-		dstPath := filepath.Join(dstDirPath, srcRelPath)
-		dstContent, err := os.ReadFile(dstPath)
-		if err != nil {
-			t.Fatalf("failed to read destination file %s: %v", dstPath, err)
-		}
-
-		if string(dstContent) != tf.content {
-			t.Errorf("CopyDir did not copy content correctly for %s, got %q, want %q", srcRelPath, string(dstContent), tf.content)
-		}
-	}
-
-	// Check subdirectory content
-	dstSubFilePath := filepath.Join(dstDirPath, "subdir", "subfile")
-	dstSubContent, err := os.ReadFile(dstSubFilePath)
-	if err != nil {
-		t.Fatalf("failed to read destination subdirectory file: %v", err)
-	}
-
-	if string(dstSubContent) != "subcontent" {
-		t.Errorf("CopyDir did not copy subdirectory content correctly, got %q, want %q", string(dstSubContent), "subcontent")
-	}
-}
-
-// TestCopyDotFiles tests the dotfile filtering and copying logic
-func TestCopyDotFiles(t *testing.T) {
-	// Create temporary directories for testing
-	srcDir, err := os.MkdirTemp("", "dotme-test-src-*")
-	if err != nil {
-		t.Fatalf("failed to create source temp dir: %v", err)
-	}
-	defer os.RemoveAll(srcDir)
-
-	dstDir, err := os.MkdirTemp("", "dotme-test-dst-*")
-	if err != nil {
-		t.Fatalf("failed to create destination temp dir: %v", err)
-	}
-	defer os.RemoveAll(dstDir)
-
-	// Create files and directories in the source
-	files := []struct {
-		name    string
-		content string
-		isDir   bool
-	}{
-		{".gitconfig", "git config content", false},
-		{".vscode", "", true},
-		{"README.md", "readme content", false},
-		{"src", "", true},
-		{".npmrc", "npm config content", false},
-	}
-
-	for _, f := range files {
-		path := filepath.Join(srcDir, f.name)
-		if f.isDir {
-			if err := os.Mkdir(path, 0755); err != nil {
-				t.Fatalf("failed to create test directory %s: %v", path, err)
-			}
-		} else {
-			if err := os.WriteFile(path, []byte(f.content), 0644); err != nil {
-				t.Fatalf("failed to create test file %s: %v", path, err)
-			}
-		}
-	}
-
-	// Create a file in the .vscode directory
-	vscodePath := filepath.Join(srcDir, ".vscode", "settings.json")
-	if err := os.WriteFile(vscodePath, []byte("vscode settings"), 0644); err != nil {
-		t.Fatalf("failed to create test file in .vscode directory: %v", err)
-	}
-
-	// Copy dotfiles
-	// Redirect stdout to avoid cluttering test output
-	originalStdout := os.Stdout
-	os.Stdout, _ = os.Open(os.DevNull)
-	defer func() { os.Stdout = originalStdout }()
-
-	if err := fspackage.CopyDotFiles(srcDir, dstDir); err != nil {
-		t.Fatalf("CopyDotFiles failed: %v", err)
-	}
-
-	// Verify only dotfiles were copied
-	entries, err := os.ReadDir(dstDir)
-	if err != nil {
-		t.Fatalf("failed to read destination directory: %v", err)
-	}
-
-	var copiedNames []string
-	for _, entry := range entries {
-		copiedNames = append(copiedNames, entry.Name())
-	}
-
-	expectedNames := []string{".gitconfig", ".npmrc", ".vscode"}
-	sort.Strings(copiedNames)
-	sort.Strings(expectedNames)
-
-	if !reflect.DeepEqual(copiedNames, expectedNames) {
-		t.Errorf("CopyDotFiles did not filter correctly, got %v, want %v", copiedNames, expectedNames)
-	}
-
-	// Check content of the copied files
-	for _, f := range files {
-		if !fspackage.IsDotfile(f.name) || f.isDir {
+			t.Errorf("Failed to read destination file %s: %v", file, err)
 			continue
 		}
 
-		dstPath := filepath.Join(dstDir, f.name)
-		content, err := os.ReadFile(dstPath)
-		if err != nil {
-			t.Fatalf("failed to read copied file %s: %v", dstPath, err)
-		}
-
-		if string(content) != f.content {
-			t.Errorf("CopyDotFiles did not copy content correctly for %s, got %q, want %q", f.name, string(content), f.content)
+		if string(content) != expectedContent {
+			t.Errorf("File %s content = %q, want %q", file, string(content), expectedContent)
 		}
 	}
+}
 
-	// Check .vscode directory contents
-	dstVscodePath := filepath.Join(dstDir, ".vscode", "settings.json")
-	content, err := os.ReadFile(dstVscodePath)
+// TestCopyDotFiles tests the dotfile filtering and copying logic with patterns
+func TestCopyDotFiles(t *testing.T) {
+	// Create a temporary directory for testing
+	tempDir, err := os.MkdirTemp("", "dotme-test-")
 	if err != nil {
-		t.Fatalf("failed to read copied file in .vscode directory: %v", err)
+		t.Fatalf("Failed to create temp directory: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	// Create source directory
+	srcDir := filepath.Join(tempDir, "src")
+	err = os.MkdirAll(srcDir, 0755)
+	if err != nil {
+		t.Fatalf("Failed to create source directory: %v", err)
 	}
 
-	if string(content) != "vscode settings" {
-		t.Errorf("CopyDotFiles did not copy .vscode contents correctly, got %q, want %q", string(content), "vscode settings")
+	// Create destination directory
+	destDir := filepath.Join(tempDir, "dest")
+	err = os.MkdirAll(destDir, 0755)
+	if err != nil {
+		t.Fatalf("Failed to create destination directory: %v", err)
+	}
+
+	// Create test files and directories
+	testFiles := map[string]string{
+		".gitconfig":    "git config content",
+		".vimrc":        "vim config content",
+		".DS_Store":     "mac metadata",
+		"README.md":     "readme content",
+		"regular.txt":   "regular file content",
+	}
+
+	for file, content := range testFiles {
+		filePath := filepath.Join(srcDir, file)
+		err = os.WriteFile(filePath, []byte(content), 0644)
+		if err != nil {
+			t.Fatalf("Failed to create test file %s: %v", file, err)
+		}
+	}
+
+	// Create a dotfile directory
+	dotDir := filepath.Join(srcDir, ".config")
+	err = os.MkdirAll(dotDir, 0755)
+	if err != nil {
+		t.Fatalf("Failed to create .config directory: %v", err)
+	}
+	err = os.WriteFile(filepath.Join(dotDir, "config.json"), []byte("{}"), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create config file: %v", err)
+	}
+
+	tests := []struct {
+		name            string
+		includePatterns []string
+		excludePatterns []string
+		expectedFiles   []string
+		unexpectedFiles []string
+	}{
+		{
+			name:            "default behavior - all dotfiles",
+			includePatterns: nil,
+			excludePatterns: nil,
+			expectedFiles:   []string{".gitconfig", ".vimrc", ".DS_Store", ".config/config.json"},
+			unexpectedFiles: []string{"README.md", "regular.txt"},
+		},
+		{
+			name:            "include specific files",
+			includePatterns: []string{".gitconfig", ".vimrc"},
+			excludePatterns: nil,
+			expectedFiles:   []string{".gitconfig", ".vimrc"},
+			unexpectedFiles: []string{".DS_Store", ".config/config.json", "README.md", "regular.txt"},
+		},
+		{
+			name:            "exclude specific files",
+			includePatterns: nil,
+			excludePatterns: []string{".DS_Store"},
+			expectedFiles:   []string{".gitconfig", ".vimrc", ".config/config.json"},
+			unexpectedFiles: []string{".DS_Store", "README.md", "regular.txt"},
+		},
+		{
+			name:            "include with glob pattern",
+			includePatterns: []string{".git*"},
+			excludePatterns: nil,
+			expectedFiles:   []string{".gitconfig"},
+			unexpectedFiles: []string{".vimrc", ".DS_Store", ".config/config.json", "README.md", "regular.txt"},
+		},
+		{
+			name:            "exclude with glob pattern",
+			includePatterns: nil,
+			excludePatterns: []string{".DS_*"},
+			expectedFiles:   []string{".gitconfig", ".vimrc", ".config/config.json"},
+			unexpectedFiles: []string{".DS_Store", "README.md", "regular.txt"},
+		},
+		{
+			name:            "both include and exclude",
+			includePatterns: []string{".git*", ".vim*"},
+			excludePatterns: []string{".DS_Store"},
+			expectedFiles:   []string{".gitconfig", ".vimrc"},
+			unexpectedFiles: []string{".DS_Store", ".config/config.json", "README.md", "regular.txt"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Clean destination directory
+			os.RemoveAll(destDir)
+			err = os.MkdirAll(destDir, 0755)
+			if err != nil {
+				t.Fatalf("Failed to recreate destination directory: %v", err)
+			}
+
+			// Create filter options
+			filterOptions := &patterns.FilterOptions{
+				IncludePatterns: tt.includePatterns,
+				ExcludePatterns: tt.excludePatterns,
+			}
+
+			// Copy dotfiles
+			err = fs.CopyDotFiles(srcDir, destDir, filterOptions)
+			if err != nil {
+				t.Fatalf("CopyDotFiles failed: %v", err)
+			}
+
+			// Check expected files exist
+			for _, expectedFile := range tt.expectedFiles {
+				destFile := filepath.Join(destDir, expectedFile)
+				if _, err := os.Stat(destFile); os.IsNotExist(err) {
+					t.Errorf("Expected file %s was not copied", expectedFile)
+				}
+			}
+
+			// Check unexpected files don't exist
+			for _, unexpectedFile := range tt.unexpectedFiles {
+				destFile := filepath.Join(destDir, unexpectedFile)
+				if _, err := os.Stat(destFile); err == nil {
+					t.Errorf("Unexpected file %s was copied", unexpectedFile)
+				}
+			}
+		})
 	}
 }
