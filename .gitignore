@@ -46,3 +46,6 @@ jspm_packages/
 
 # repomix-output-*
 repomix-output.xml
+
+#plugins
+.coder-ide
