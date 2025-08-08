@@ -16,7 +16,14 @@ var (
 
 // Config represents the structure of the configuration file
 type Config struct {
-	Repositories map[string]string `json:"repositories"` // Maps alias to repository URL
+	Repositories    map[string]string `json:"repositories"`     // Maps alias to repository URL
+	DefaultPatterns PatternConfig     `json:"default_patterns"` // Default include/exclude patterns
+}
+
+// PatternConfig holds the default pattern configuration
+type PatternConfig struct {
+	IncludePatterns []string `json:"include_patterns,omitempty"`
+	ExcludePatterns []string `json:"exclude_patterns,omitempty"`
 }
 
 // GetConfigPath returns the path to the configuration file
@@ -155,5 +162,26 @@ func DeleteAlias(alias string) error {
 	// Delete the alias
 	delete(config.Repositories, alias)
 
+	return saveConfig(config)
+}
+
+// GetDefaultPatterns returns the default pattern configuration
+func GetDefaultPatterns() (PatternConfig, error) {
+	config, err := loadConfig()
+	if err != nil {
+		return PatternConfig{}, err
+	}
+
+	return config.DefaultPatterns, nil
+}
+
+// SetDefaultPatterns saves the default pattern configuration
+func SetDefaultPatterns(patterns PatternConfig) error {
+	config, err := loadConfig()
+	if err != nil {
+		return err
+	}
+
+	config.DefaultPatterns = patterns
 	return saveConfig(config)
 }

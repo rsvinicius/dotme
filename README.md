@@ -15,6 +15,8 @@ A command-line tool to apply dotfiles from a Git repository to your current work
 
 - Apply dotfiles from any Git repository with a single command
 - Only copies files and folders that start with a dot (`.`) at the repository root
+- **Pattern-based filtering**: Include or exclude specific dotfiles using glob patterns
+- **Default pattern configuration**: Set default include/exclude patterns for consistent behavior
 - Recursively copies contents of dotfiles folders
 - Cross-platform (Linux, macOS, Windows)
 - Save repositories with aliases for quick access
@@ -80,6 +82,8 @@ go install
 
 ## 🔧 Usage
 
+### Basic Usage
+
 ```bash
 # Apply dotfiles from a Git repository
 dotme https://github.com/your-username/dotfiles
@@ -100,48 +104,89 @@ dotme remove-alias my-dotfiles
 dotme version
 ```
 
-### Example
+### Pattern-Based Filtering
+
+You can use include and exclude patterns to control which dotfiles are copied:
 
 ```bash
-# Apply dotfiles from a repository
+# Include only specific dotfiles
+dotme --include=".vscode,.gitconfig" https://github.com/your-username/dotfiles
+
+# Exclude specific dotfiles
+dotme --exclude=".DS_Store" https://github.com/your-username/dotfiles
+
+# Use glob patterns
+dotme --include=".git*" https://github.com/your-username/dotfiles
+
+# Combine include and exclude patterns
+dotme --include=".git*,.vim*" --exclude=".DS_Store" https://github.com/your-username/dotfiles
+```
+
+#### Pattern Examples
+
+- **Exact match**: `.gitconfig` matches only `.gitconfig`
+- **Glob patterns**: 
+  - `.git*` matches `.gitconfig`, `.gitignore`, `.github/`, etc.
+  - `.vim*` matches `.vimrc`, `.vim/`, etc.
+  - `.*rc` matches `.bashrc`, `.vimrc`, `.zshrc`, etc.
+- **Character classes**: `.git[ci]*` matches `.gitconfig` and `.gitignore`
+
+### Configuration Management
+
+```bash
+# Set default patterns that will be used when no patterns are specified
+dotme config set-default-patterns --include=".git*,.vim*" --exclude=".DS_Store"
+
+# Show current configuration (aliases and default patterns)
+dotme config show
+
+# Apply dotfiles using default patterns (no need to specify patterns each time)
 dotme https://github.com/your-username/dotfiles
 ```
 
-This will:
-1. Clone the repository to a temporary directory
-2. Copy only files and folders that start with a dot (`.`) from the root of the repository to your current directory
-3. Show what was copied and what was ignored
-4. Clean up the temporary directory
+### Example Workflows
 
-### Repository Aliases
-
-You can save frequently used repositories with aliases for easier access:
-
+#### Basic Setup
 ```bash
-# Save a repository with an alias
-dotme -s work-dotfiles https://github.com/your-company/dotfiles
-
-# Apply dotfiles using the saved alias
-dotme -a work-dotfiles
-
-# List all saved aliases
-dotme list-aliases
-
-# Remove an alias you no longer need
-dotme remove-alias work-dotfiles
+# Apply all dotfiles from a repository
+dotme https://github.com/your-username/dotfiles
 ```
 
-Aliases are stored in `~/.dotme/config.json` and can be used across sessions.
+#### Selective Setup
+```bash
+# Only copy Git and Vim configuration files
+dotme --include=".git*,.vim*" https://github.com/your-username/dotfiles
+
+# Copy all dotfiles except macOS metadata files
+dotme --exclude=".DS_Store,.Trash*" https://github.com/your-username/dotfiles
+```
+
+#### Using Aliases and Default Patterns
+```bash
+# Save a repository with an alias
+dotme -s work-setup https://github.com/company/dotfiles
+
+# Set default patterns to exclude unwanted files
+dotme config set-default-patterns --exclude=".DS_Store,.Trash*"
+
+# Apply dotfiles using alias and default patterns
+dotme -a work-setup
+```
 
 ## ⚙️ How It Works
 
 `dotme` performs the following steps:
 1. Clones the specified Git repository to a temporary directory
-2. Scans the root of the cloned repository for files and folders that start with a dot (`.`)
-3. Copies those files/folders to your current working directory
+2. Scans the root of the cloned repository for files and folders
+3. Applies pattern filtering (if specified) to determine which files to copy:
+   - If include patterns are specified, only files matching those patterns are considered
+   - If exclude patterns are specified, files matching those patterns are skipped
+   - If no patterns are specified, all dotfiles (files starting with `.`) are copied
+4. Copies the filtered files/folders to your current working directory
    - For folders, it recursively copies all contents (regardless of whether the inner files start with a dot)
-4. Displays a summary of what was copied and what was ignored
-5. Cleans up the temporary directory
+5. Displays a summary of what was copied and what was ignored
+6. Shows active filters if any patterns were used
+7. Cleans up the temporary directory
 
 ## 🧪 Development and Testing
 
@@ -154,10 +199,12 @@ dotme/
 │   ├── alias/              # Repository alias management
 │   ├── fs/                 # File system operations
 │   ├── git/                # Git repository operations
+│   ├── patterns/           # Pattern matching and filtering
 │   └── dotfiles.go         # Integration layer
 └── test/                   # Test code
     ├── alias/              # Alias tests
     ├── fs/                 # File system tests
+    ├── patterns/           # Pattern matching tests
     └── mocks/              # Mock implementations
 ```
 
