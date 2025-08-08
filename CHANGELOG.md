@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.3.0] - 2025-01-27
+
 ### Added
 - Pattern-based filtering support:
   - `--include` flag to specify patterns for files to include
